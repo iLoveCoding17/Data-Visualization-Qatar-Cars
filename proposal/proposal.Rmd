@@ -1,0 +1,113 @@
+---
+title: "Project proposal"
+author: "Team 14: Aryan Arya and Tan Hai Nam Dang"
+date: "2026-03-06"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(here)
+library(skimr)
+```
+
+## Questions to be investigated
+
+**Question 1: How do car prices vary by country of origin in the Qatar market?**
+
+This question examines how car prices differ depending on the country where the brand originates. By comparing price distributions across countries, we can identify which regions tend to produce more luxury vehicles and which regions offer more affordable cars. This helps establish an overall picture of the car market in Qatar.
+
+**Question 2: How does the relationship between price and horsepower differ between electric vehicles (EVs) and traditional internal combustion engines (ICE)**
+
+This question explores whether electric vehicles (EVs) are priced differently than traditional internal combustion engine (ICE) cars when considering performance. By comparing price and horsepower for both types, we can see whether EVs cost more for similar power or if their prices are becoming comparable to gasoline vehicles.
+
+**Question 3: Does vehicle size and utility (trunk volume) reliably predict price, or do brand origin and fuel type disrupt this relationship?**
+
+This question investigates whether larger cars with greater trunk capacity tend to be more expensive. It also considers whether other factors, such as country of origin (Question 1) or engine type (Question 2), affect price more strongly than physical size or storage capacity. This helps determine what factors most influence car prices in the dataset.
+
+## Data to be used
+
+The dataset selected for this project is the Qatar Cars dataset, featured in the TidyTuesday project for December 9, 2025.
+
+**General Description**
+
+The Qatar Cars dataset is a modern, metric-based alternative to the classic "mtcars" dataset. It was specifically designed to move away from "U.S. defaultism" by including vehicles common in international markets (such as those from Chinese, Japanese, and European manufacturers) and modern engine types, including electric (EV) and hybrid vehicles. All physical measurements are in International System (SI) units, and pricing reflects the 2025 automotive market in Qatar (Qatari Riyals).
+
+**Variables and type**
+
+-   origin (Categorical): Country associated with the car brand (e.g., Japan, China, Germany)
+
+-   make (Categorical): Brand name of the car (e.g., Toyota, BYD, Land Rover)
+
+-   model (Categorical): Specific vehicle model (e.g., Land Cruiser, Han)
+
+-   type (Categorical): Body style (levels: SUV, Sedan, Coupe, etc.)
+
+-   enginetype (Categorical): Propulsion system (levels: petrol, hybrid, electric)
+
+-   price (Quantitative): Price in 2025 Qatari Riyals (QAR)
+
+-   horsepower (Quantitative): Engine power output (measured in hp)
+
+-   trunk (Quantitative): Trunk capacity/volume (measured in Liters)
+
+-   economy (Quantitative): Fuel economy (measured in L/100km)
+
+-   performance (Quantitative): Time to accelerate from 0 to 100 km/h (measured in seconds)
+
+-   length/width/height (Quantitative): Physical dimensions (measured in meters)
+
+-   mass (Quantitative): Vehicle weight (measured in kg)
+
+-   seating (Quantitative): Number of passenger seats
+
+**The number of observations**
+
+The dataset contains 105 unique car models (observations) across 15 variables. This sample size is manageable for a group of two and it meets all the requirements for this project.
+
+**Metadata**
+
+Collector: Data was compiled by Paul Musgrave and his international politics students at Georgetown University in Qatar.
+
+Collection Date: January 2025
+
+Methodology: The data was collected primarily from YallaMotors Qatar, a leading automotive marketplace in the region. It represents an exhaustive snapshot of the most popular and prominent models available for purchase in the Qatari market at the start of 2025.
+
+```{r}
+qatar_cars <- read_csv("../data/qatarcars.csv")
+
+skim(qatarcars)
+```
+
+## Ideas for visualization
+
+**Question 1:**
+
+To answer the first question regarding car prices per country, we will create a faceted violin plot combined with a box plot. We will use the price and origin variables. This visualization will allow us to see the median price for each country, and identify which countries have a broad range of prices and which are strictly concentrated in the high-end luxury or budget segments.
+
+**Question 2:**
+
+To investigate how price and horsepower differ between engine types in Question 2, we will produce a scatter plot with linear regression smoothing. We will use the "price", "horsepower", "enginetype" variables. By comparing the slopes of the regression lines for each engine type, we can visually determine if having more horsepower is more expensive in electric vehicles than in traditional petrol cars.
+
+**Question 3:**
+
+To address the final question about whether size predicts price, we will perform a Principal Component Analysis (PCA) and visualize the results using a biplot. This approach will help us reduce multiple size-related variables (such as length, width, height, trunk, and mass) and visualize how those variables relate to price.
+
+## Team planning
+
+There are two members in the team. We plan to divide the work equally throughout the project. Both of us will work together on data exploration, the proposal, the presentation and visualizing data.
+
+One team member will focus more on creating and refining the visualizations, while the other will focus more on interpreting the results and writing parts of the report. Both members will review each other’s work and give feedback.
+
+We will analyze the same dataset together, rather than using different datasets.
+
+## Challenges anticipated
+
+A challenge of this project might be determining the best way to visualize relationships between multiple quantitative variables such as price, horsepower, and performance. Several variables may be related at the same time, so it may require experimenting with different types of visualizations to decide which ones provide the clearest insights.
+
+## References
+
+Data source: TidyTuesday Dataset – Cars in Qatar (2025-12-09) <https://github.com/rfordatascience/tidytuesday/tree/main/data/2025/2025-12-09>
+
+The dataset was originally created by Paul Musgrave and students at Georgetown University in Qatar to provide a modern, internationally relevant dataset for data analysis and research opportunities.
