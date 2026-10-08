@@ -1,195 +1,181 @@
----
-  title: "Car Market Analysis in Qatar"
-author: "Team 14: Aryan Arya and Tan Hai Nam Dang"
-date: "2026-04-07"
-format:
-  revealjs:
-  theme: night
-slide-number: true
-transition: fade
-background-transition: fade
-fontsize: 1.5em
----
-  
-  ```{r include=FALSE, messages=FALSE, warning=FALSE}
+# Qatar Cars Data Analysis
+
+
+# 1. Load packages and data
+
 library(tidyverse)
 library(here)
 
-qatar_cars <- read_csv("../data/qatarcars.csv")
-```
+qatar_cars <- read_csv(here("data", "qatarcars.csv"))
 
 
-## Goals
+# 2. Dataset summary
 
-- **Goal 1:** Understand how a car's country of origin influences its price in the Qatari market <br><br>
-
-- **Goal 2:** Explore whether electric vehicles cost more than petrol cars for the same level of performance <br><br>
-
-- **Goal 3:** Determine whether physical size and trunk volume reliably predict price, or whether brand origin and fuel type matter more
-
-## The Dataset: Qatar Cars
-
-- A modern, internationally-focused alternative to the classic `mtcars` dataset <br><br>
-
-- Includes brands common in international markets, such as BMW, Mercedes, Toyota, and Honda <br><br>
-
-- All measurements are in **International System (SI) units** (meters, kg, liters) <br><br>
-
-- Prices are in **Qatari Riyal (QAR)**
-
-## The Dataset: Qatar Cars
-
-```{r echo=FALSE}
-qatar_cars |>
+dataset_summary <- qatar_cars |>
   summarise(
     Observations = n(),
-    Countries    = n_distinct(origin),
-    Brands       = n_distinct(make),
+    Countries = n_distinct(origin),
+    Brands = n_distinct(make),
     `Engine Types` = paste0(
-      n_distinct(enginetype), " (Petrol, Hybrid, Electric)"
+      n_distinct(enginetype),
+      " (Petrol, Hybrid, Electric)"
     ),
     `Price Range (QAR)` = paste0(
-      scales::comma(min(price, na.rm = TRUE)), " - ",
+      scales::comma(min(price, na.rm = TRUE)),
+      " - ",
       scales::comma(max(price, na.rm = TRUE))
     )
-  ) |>
-  mutate(across(everything(), as.character)) |>
-  pivot_longer(everything(), names_to = "Feature", values_to = "Value") |>
-  knitr::kable()
-```
-
-- Key variables: `origin`, `price`, `horsepower`, `trunk`, `enginetype`, `length`, `width`, `height`, `mass`
+  )
 
 
+# 3. Car prices by country
 
+price_by_origin <- qatar_cars |>
+  mutate(
+    origin = fct_reorder(
+      origin,
+      price,
+      median,
+      na.rm = TRUE
+    )
+  )
 
-## Car Prices by Country
-
-- **Asian brands (China, South Korea, Japan)** cluster tightly below 200,000 QAR: affordable
-- **USA** has the widest spread of any country 
-
-```{r echo=FALSE, out.height="50%", fig.align="center"}
-qatar_cars |>
-  mutate(origin = fct_reorder(origin, price, median, na.rm = TRUE)) |>
-  ggplot(aes(x = origin, y = price, fill = origin)) +
+price_by_origin_plot <- price_by_origin |>
+  ggplot(
+    aes(
+      x = origin,
+      y = price,
+      fill = origin
+    )
+  ) +
   geom_violin(alpha = 0.5) +
   geom_boxplot(width = 0.2) +
-  scale_y_log10(labels = scales::label_comma()) +
+  scale_y_log10(
+    labels = scales::label_comma()
+  ) +
   labs(
     x = "Country of Origin",
     y = "Price (QAR)"
   ) +
   theme_minimal() +
-  theme(legend.position = "none")
-```
+  theme(
+    legend.position = "none"
+  )
 
 
-## Car Prices by Country
+# 4. Price vs horsepower by engine type
 
-- **Sweden & Germany** sit confidently in the mid-to-high range
-- **Italy & UK** reach into the millions: they are status symbols
+horsepower_data <- qatar_cars |>
+  filter(
+    !is.na(horsepower),
+    !is.na(price),
+    !is.na(enginetype)
+  )
 
-```{r echo=FALSE, out.height="50%", fig.align="center"}
-qatar_cars |>
-  mutate(origin = fct_reorder(origin, price, median, na.rm = TRUE)) |>
-  ggplot(aes(x = origin, y = price, fill = origin)) +
-  geom_violin(alpha = 0.5) +
-  geom_boxplot(width = 0.2) +
-  scale_y_log10(labels = scales::label_comma()) +
-  labs(
-    x = "Country of Origin",
-    y = "Price (QAR, log scale)"
+horsepower_price_plot <- horsepower_data |>
+  ggplot(
+    aes(
+      x = horsepower,
+      y = price,
+      color = enginetype
+    )
   ) +
-  theme_minimal() +
-  theme(legend.position = "none")
-```
-
-## Origin Tells You the Price Before You See the Brand
-
-> *In Qatar's market, knowing where a car comes from tells you almost everything about what it costs.*
-  
-  
-  
-  
-  ## Price vs Horsepower by Engine Type
-  
-  - **All three engine types start at the same place:** at low horsepower, EVs, hybrids, and petrol cars are similarly priced around 100,000–200,000 QAR
-- **Petrol's slope is the steepest:** as horsepower climbs, petrol prices explode upward fastest, driven by high-performance supercars
-
-```{r echo=FALSE, out.height="50%", fig.align="center"}
-qatar_cars |>
-  filter(!is.na(horsepower), !is.na(price), !is.na(enginetype)) |>
-  ggplot(aes(x = horsepower, y = price, color = enginetype)) +
   geom_point() +
   geom_smooth(method = "lm") +
-  scale_y_log10(labels = scales::label_comma()) +
+  scale_y_log10(
+    labels = scales::label_comma()
+  ) +
   labs(
     x = "Horsepower (hp)",
     y = "Price (QAR, log scale)",
     color = "Engine Type"
   ) +
   theme_minimal()
-```
 
 
-## Price vs Horsepower by Engine Type
+# 5. PCA analysis
 
-- **EVs have a flatter slope:** more horsepower does not cost as much extra compared to petrol, suggesting EVs offer better value at higher performance levels
-- **Hybrids are limited in range:** few hybrid models exceed 500 hp, so their trend is less conclusive
-
-```{r echo=FALSE, out.height="50%", fig.align="center"}
-qatar_cars |>
-  filter(!is.na(horsepower), !is.na(price), !is.na(enginetype)) |>
-  ggplot(aes(x = horsepower, y = price, color = enginetype)) +
-  geom_point() +
-  geom_smooth(method = "lm") +
-  scale_y_log10(labels = scales::label_comma()) +
-  labs(
-    x = "Horsepower (hp)",
-    y = "Price (QAR, log scale)",
-    color = "Engine Type"
-  ) +
-  theme_minimal()
-```
-
-
-## More Power Costs More, <br> But Not Equally for Every Engine
-
-> *For the cars most people actually buy, electric and petrol cost the same. The price gap at the top is a supercar problem.*
-
-
-
-
-## Vehicle Size, Price, Origin, and Engine Type: <br> PCA Analysis
-
-- **Size variables (length, mass, width) point left:** larger, heavier cars tend to  cluster on the left, but price points **downward**, in a completely different direction
-- **Price and size are not aligned:** if size drove price, their arrows would point the same way. However, they don't.
-
-```{r echo=FALSE, out.height="50%", fig.align="center"}
 pca_data <- qatar_cars |>
-  select(price, length, width, height, trunk, mass, origin, enginetype) |>
-  filter(complete.cases(pick(price, length, width, height, trunk, mass)))
+  select(
+    price,
+    length,
+    width,
+    height,
+    trunk,
+    mass,
+    origin,
+    enginetype
+  ) |>
+  filter(
+    complete.cases(
+      pick(
+        price,
+        length,
+        width,
+        height,
+        trunk,
+        mass
+      )
+    )
+  )
 
 pca_result <- pca_data |>
-  select(price, length, width, height, trunk, mass) |>
+  select(
+    price,
+    length,
+    width,
+    height,
+    trunk,
+    mass
+  ) |>
   scale() |>
   prcomp()
 
 pca_scores <- as_tibble(pca_result$x) |>
-  bind_cols(pca_data |> select(origin, enginetype))
+  bind_cols(
+    pca_data |>
+      select(origin, enginetype)
+  )
 
-pca_loadings <- as_tibble(pca_result$rotation, rownames = "variable") |>
-  mutate(PC1_scaled = PC1 * 4,
-         PC2_scaled = PC2 * 4)
+pca_loadings <- as_tibble(
+  pca_result$rotation,
+  rownames = "variable"
+) |>
+  mutate(
+    PC1_scaled = PC1 * 4,
+    PC2_scaled = PC2 * 4
+  )
 
-ggplot() +
-  geom_point(data = pca_scores,
-             aes(x = PC1, y = PC2, color = origin, shape = enginetype)) +
-  geom_segment(data = pca_loadings,
-               aes(x = 0, y = 0, xend = PC1_scaled, yend = PC2_scaled),
-               arrow = arrow(length = unit(0.25, "cm"))) +
-  geom_text(data = pca_loadings,
-            aes(x = PC1_scaled * 1.12, y = PC2_scaled * 1.12, label = variable)) +
+pca_plot <- ggplot() +
+  geom_point(
+    data = pca_scores,
+    aes(
+      x = PC1,
+      y = PC2,
+      color = origin,
+      shape = enginetype
+    )
+  ) +
+  geom_segment(
+    data = pca_loadings,
+    aes(
+      x = 0,
+      y = 0,
+      xend = PC1_scaled,
+      yend = PC2_scaled
+    ),
+    arrow = arrow(
+      length = unit(0.25, "cm")
+    )
+  ) +
+  geom_text(
+    data = pca_loadings,
+    aes(
+      x = PC1_scaled * 1.12,
+      y = PC2_scaled * 1.12,
+      label = variable
+    )
+  ) +
   labs(
     title = "PCA Biplot: Size, Price, Origin, and Engine Type",
     x = "PC1",
@@ -198,61 +184,3 @@ ggplot() +
     shape = "Engine Type"
   ) +
   theme_minimal()
-```
-
-
-## Vehicle Size, Price, Origin, and Engine Type: <br> PCA Analysis
-
-- **Italian & UK cars (orange & purple) sit far from the pack:** isolated at the bottom, confirming that prestige, not size, is what makes them expensive
-- **Chinese & Japanese cars (green) spread rightward:** large but affordable, proving that you can have a big car without a big price tag
-
-```{r echo=FALSE, out.height="50%", fig.align="center"}
-pca_data <- qatar_cars |>
-  select(price, length, width, height, trunk, mass, origin, enginetype) |>
-  filter(complete.cases(pick(price, length, width, height, trunk, mass)))
-
-pca_result <- pca_data |>
-  select(price, length, width, height, trunk, mass) |>
-  scale() |>
-  prcomp()
-
-pca_scores <- as_tibble(pca_result$x) |>
-  bind_cols(pca_data |> select(origin, enginetype))
-
-pca_loadings <- as_tibble(pca_result$rotation, rownames = "variable") |>
-  mutate(PC1_scaled = PC1 * 4,
-         PC2_scaled = PC2 * 4)
-
-ggplot() +
-  geom_point(data = pca_scores,
-             aes(x = PC1, y = PC2, color = origin, shape = enginetype)) +
-  geom_segment(data = pca_loadings,
-               aes(x = 0, y = 0, xend = PC1_scaled, yend = PC2_scaled),
-               arrow = arrow(length = unit(0.25, "cm"))) +
-  geom_text(data = pca_loadings,
-            aes(x = PC1_scaled * 1.12, y = PC2_scaled * 1.12, label = variable)) +
-  labs(
-    title = "PCA Biplot: Size, Price, Origin, and Engine Type",
-    x = "PC1",
-    y = "PC2",
-    color = "Origin",
-    shape = "Engine Type"
-  ) +
-  theme_minimal()
-```
-
-## Size Does Not Sets the Price, But Origin Does
-
-> *A bigger car is not a more expensive car. In Qatar's market, brand prestige matters more than size.*
-
-
-
-
-## The Brand Name Is The Most Powerful Pricing Factor
-
-- **Goal 1 ✓** <br> Country of origin is the strongest price signal in Qatar's market. Asian brands dominate the affordable segment, European brands own the premium tier, while Italian & UK cars exist in a league of their own. <br><br>
-  
-  - **Goal 2 ✓** <br> EVs are not more expensive than petrol for equivalent performance. At usual horsepower levels, the price gap is negligible. Therefore, the EV revolution is more affordable than you could imagine. <br><br>
-  
-  - **Goal 3 ✓** <br> Size does not reliably predict price. A large Chinese SUV and a compact Italian supercar can differ by millions. Prestige sets the ceiling, not dimensions. 
-
